@@ -161,6 +161,7 @@ class SkSurface {
   int height() => _surface.callMethod('height');
 
   void dispose() {
+    canvasKit.callMethod('DeleteWebGLContext', [_glContext]);
     _surface.callMethod('dispose');
   }
 }
