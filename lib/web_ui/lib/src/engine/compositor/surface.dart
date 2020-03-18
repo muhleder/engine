@@ -74,6 +74,11 @@ class Surface {
     _addedToScene = true;
   }
 
+  void dispose() {
+    _surface?.dispose();
+    htmlElement?.remove();
+  }
+
   bool _createOrUpdateSurfaces(ui.Size size) {
     if (_surface != null &&
         size ==
