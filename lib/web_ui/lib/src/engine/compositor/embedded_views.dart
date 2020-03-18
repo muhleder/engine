@@ -370,7 +370,7 @@ class HtmlViewEmbedder {
       _rootViews.remove(viewId);
       if (_overlays[viewId] != null) {
         final Overlay overlay = _overlays[viewId];
-        overlay.surface.htmlElement?.remove();
+        overlay.surface?.dispose();
       }
       _overlays.remove(viewId);
       _currentCompositionParams.remove(viewId);
