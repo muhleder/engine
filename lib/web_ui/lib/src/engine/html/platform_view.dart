@@ -13,8 +13,6 @@ class PersistedPlatformView extends PersistedLeafSurface {
   final double width;
   final double height;
 
-  late html.ShadowRoot _shadowRoot;
-
   PersistedPlatformView(this.viewId, this.dx, this.dy, this.width, this.height);
 
   @override
@@ -38,19 +36,10 @@ class PersistedPlatformView extends PersistedLeafSurface {
 
     // Enforce the effective size of the PlatformView.
     element.style.overflow = 'hidden';
-
-    _shadowRoot = element.attachShadow(<String, String>{'mode': 'open'});
-    final html.StyleElement _styleReset = html.StyleElement();
-    _styleReset.innerHtml = '''
-      :host {
-        all: initial;
-        cursor: inherit;
-      }''';
-    _shadowRoot.append(_styleReset);
     final html.Element? platformView =
         ui.platformViewRegistry.getCreatedView(viewId);
     if (platformView != null) {
-      _shadowRoot.append(platformView);
+      element.append(platformView);
     } else {
       html.window.console.warn('No platform view created for id $viewId');
     }
