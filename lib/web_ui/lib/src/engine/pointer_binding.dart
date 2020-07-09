@@ -309,7 +309,8 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     // Prevent default so mouse wheel event doesn't get converted to
     // a scroll event that semantic nodes would process.
     //
-    event.preventDefault();
+    // Allow Narrative scroll events to reach the editor
+    // event.preventDefault();
   }
 
   /// For browsers that report delta line instead of pixels such as FireFox
