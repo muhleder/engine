@@ -299,6 +299,10 @@ abstract class PersistedSurface implements ui.EngineLayer {
   /// The surface is in the [PersistedSurfaceState.released] state;
   bool get isReleased => _state == PersistedSurfaceState.released;
 
+  String? widgetKey;
+  String? widgetRuntimeType;
+  String? widgetDescription;
+
   /// The root element that renders this surface to the DOM.
   ///
   /// This element can be reused across frames. See also, [childContainer],
@@ -861,7 +865,11 @@ abstract class PersistedContainerSurface extends PersistedSurface {
       if (!newChild.canUpdateAsMatch(candidate)) {
         continue;
       }
-      final double score = newChild.matchForUpdate(candidate);
+
+      double score = _matchByWidget(newChild, candidate);
+      if (score == 1.0) {
+        score = newChild.matchForUpdate(candidate);
+      }
       if (score < bestScore) {
         bestMatch = candidate;
         bestScore = score;
@@ -1046,6 +1054,34 @@ abstract class PersistedContainerSurface extends PersistedSurface {
     }
   }
 
+  double _matchByWidget(PersistedSurface newChild, PersistedSurface candidate) {
+    double matchQuality;
+    if (newChild.widgetKey != null && newChild.widgetRuntimeType != null) {
+      if (newChild.widgetKey == candidate.widgetKey && newChild.widgetRuntimeType == candidate.widgetRuntimeType) {
+        assert(() {
+          print('Great match ${newChild.widgetRuntimeType} ${newChild.widgetKey}');
+          return true;
+        }());
+        matchQuality = 0.0;
+      } else {
+        matchQuality = 1.0;
+      }
+    } else if (newChild.widgetRuntimeType != null) {
+      if (newChild.widgetRuntimeType == candidate.widgetRuntimeType) {
+        matchQuality = 0.5;
+        assert(() {
+          print('Good match ${newChild.widgetRuntimeType}');
+          return true;
+        }());
+      } else {
+        matchQuality = 1.0;
+      }
+    } else {
+      matchQuality = newChild.matchForUpdate(candidate);
+    }
+    return matchQuality;
+  }
+
   Map<PersistedSurface?, PersistedSurface> _matchChildren(
       PersistedContainerSurface oldSurface) {
     final int newUnfilteredChildCount = _children.length;
@@ -1081,6 +1117,13 @@ abstract class PersistedContainerSurface extends PersistedSurface {
 
     final List<_PersistedSurfaceMatch> allMatches = <_PersistedSurfaceMatch>[];
 
+    if (newChildCount == 1 && oldChildCount == 1) {
+      final Map<PersistedSurface?, PersistedSurface> result =
+      <PersistedSurface?, PersistedSurface>{};
+      result[newChildren[0]] = oldChildren[0] as PersistedSurface;
+      return result;
+    }
+
     // This is worst-case O(N*M) but it only happens when:
     // - most of the children are newly created (N)
     // - the old container is not empty (M)
@@ -1095,8 +1138,10 @@ abstract class PersistedContainerSurface extends PersistedSurface {
         if (childAlreadyClaimed || !newChild.canUpdateAsMatch(oldChild!)) {
           continue;
         }
+        double matchQuality = _matchByWidget(newChild, oldChild);
+
         allMatches.add(_PersistedSurfaceMatch(
-          matchQuality: newChild.matchForUpdate(oldChild),
+          matchQuality: matchQuality,
           newChild: newChild,
           oldChildIndex: indexInOld,
         ));
