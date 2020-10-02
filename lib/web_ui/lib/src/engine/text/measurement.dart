@@ -222,6 +222,7 @@ abstract class TextMeasurementService {
     final ParagraphGeometricStyle style = paragraph._geometricStyle;
     return paragraph._plainText != null &&
         style.decoration == null &&
+        style.maxLines == null &&
         style.wordSpacing == null;
   }
 
