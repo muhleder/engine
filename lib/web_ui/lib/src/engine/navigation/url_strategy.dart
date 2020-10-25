@@ -288,7 +288,8 @@ class BrowserPlatformLocation extends PlatformLocation {
 
   @override
   void go(int count) {
-    _history.go(count);
+    // We handle back actions in the Narrative app
+    // _history.go(count);
   }
 
   @override
