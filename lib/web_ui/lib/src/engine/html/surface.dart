@@ -303,6 +303,9 @@ abstract class PersistedSurface implements ui.EngineLayer {
   String? widgetRuntimeType;
   String? widgetDescription;
 
+  /// The surface is a platform view or there is a platform view in it's subtree.
+  bool containsPlatformView = false;
+
   /// The root element that renders this surface to the DOM.
   ///
   /// This element can be reused across frames. See also, [childContainer],
@@ -368,6 +371,14 @@ abstract class PersistedSurface implements ui.EngineLayer {
     if (_debugExplainSurfaceStats) {
       _surfaceStatsFor(this).allocatedDomNodeCount++;
     }
+    if (this is PersistedPlatformView) {
+      containsPlatformView = true;
+      PersistedContainerSurface? ancestor = parent;
+      while (ancestor != null) {
+        ancestor.containsPlatformView = true;
+        ancestor = ancestor.parent;
+      }
+    }
     apply();
     state = PersistedSurfaceState.active;
   }
@@ -391,6 +402,7 @@ abstract class PersistedSurface implements ui.EngineLayer {
       return true;
     }());
     rootElement = oldSurface.rootElement;
+    containsPlatformView = oldSurface.containsPlatformView;
     if (_debugExplainSurfaceStats) {
       _surfaceStatsFor(this).reuseElementCount++;
     }
@@ -1027,11 +1039,19 @@ abstract class PersistedContainerSurface extends PersistedSurface {
   /// Performs the minimum number of DOM moves necessary to put all children in
   /// the right place in the DOM.
   void _insertChildDomNodes(List<int>? indexMapNew, List<int> indexMapOld) {
-    final List<int?> stationaryIndices = longestIncreasingSubsequence(indexMapOld);
-
-    // Convert to stationary new indices
-    for (int i = 0; i < stationaryIndices.length; i++) {
-      stationaryIndices[i] = indexMapNew![stationaryIndices[i]!];
+    int platformViewIndex = -1;
+    if (containsPlatformView) {
+      platformViewIndex = _children.indexWhere((surface) => surface.containsPlatformView);
+    }
+    List<int?> stationaryIndices;
+    if (platformViewIndex > -1) {
+      stationaryIndices = [platformViewIndex];
+    } else {
+      stationaryIndices = longestIncreasingSubsequence(indexMapOld);
+      // Convert to stationary new indices
+      for (int i = 0; i < stationaryIndices.length; i++) {
+        stationaryIndices[i] = indexMapNew![stationaryIndices[i]!];
+      }
     }
 
     html.HtmlElement? refNode;
