@@ -27,6 +27,9 @@ class HtmlViewEmbedder {
   /// The HTML element associated with the given view id.
   final Map<int?, html.Element> _views = <int?, html.Element>{};
 
+  final Map<int?, Map<String, dynamic>?> _viewsMetadata = <int?, Map<String, dynamic>?>{};
+
+
   /// The root view in the stack of mutator elements for the view id.
   final Map<int?, html.Element?> _rootViews = <int?, html.Element?>{};
 
@@ -97,6 +100,8 @@ class HtmlViewEmbedder {
 
     final ui.PlatformViewFactory? factory =
         ui.platformViewRegistry.registeredFactories[viewType];
+    final Map<String, dynamic>? metadata = ui.platformViewRegistry.registeredMetadata[viewType];
+    _viewsMetadata[viewId] = metadata;
     if (factory == null) {
       callback!(codec.encodeErrorEnvelope(
         code: 'unregistered_view_type',
@@ -420,9 +425,11 @@ class HtmlViewEmbedder {
     // Try reusing a cached overlay created for another platform view.
     overlay = OverlayCache.instance.reserveOverlay();
 
+    final Map<String, dynamic>? metadata = _viewsMetadata[viewId];
+    final bool _minimumCanvas = metadata?['minimumCanvas'] ?? false;
     // If nothing to reuse, create a new overlay.
     if (overlay == null) {
-      overlay = Surface(this);
+      overlay = Surface(this, minimumCanvas: _minimumCanvas);
     }
 
     _overlays[viewId] = overlay;

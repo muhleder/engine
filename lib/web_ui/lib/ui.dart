@@ -64,16 +64,18 @@ class PlatformViewRegistry {
       <String, PlatformViewFactory>{};
 
   final Map<int, html.Element> _createdViews = <int, html.Element>{};
+  final Map<String, Map<String, bool>?> registeredMetadata = <String, Map<String, bool>?>{};
 
   /// Private constructor so this class can be a singleton.
   PlatformViewRegistry._();
 
   /// Register [viewTypeId] as being creating by the given [factory].
-  bool registerViewFactory(String viewTypeId, PlatformViewFactory factory) {
+  bool registerViewFactory(String viewTypeId, PlatformViewFactory factory, {Map<String, bool>? metadata}) {
     if (registeredFactories.containsKey(viewTypeId)) {
       return false;
     }
     registeredFactories[viewTypeId] = factory;
+    platformViewRegistry.registeredMetadata[viewTypeId] = metadata;
     return true;
   }
 
@@ -112,7 +114,7 @@ void handlePlatformViewCall(
 }
 
 void _createPlatformView(
-    engine.MethodCall methodCall, PlatformMessageResponseCallback callback) {
+    engine.MethodCall methodCall, PlatformMessageResponseCallback callback ) {
   final Map<dynamic, dynamic> args = methodCall.arguments;
   final int id = args['id'];
   final String viewType = args['viewType'];

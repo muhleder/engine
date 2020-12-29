@@ -35,7 +35,7 @@ class SurfaceFrame {
 /// successive frames if they are the same size. Otherwise, a new [CkSurface] is
 /// created.
 class Surface {
-  Surface(this.viewEmbedder);
+  Surface(this.viewEmbedder, {bool minimumCanvas = false}): _minimumCanvas = minimumCanvas;
 
   CkSurface? _surface;
 
@@ -47,6 +47,7 @@ class Surface {
 
   SkGrContext? _grContext;
   int? _skiaCacheBytes;
+  bool _minimumCanvas;
 
   /// The root HTML element for this surface.
   ///
@@ -142,11 +143,21 @@ class Surface {
 
     // If `physicalSize` is not precise, use a slightly bigger canvas. This way
     // we ensure that the rendred picture covers the entire browser window.
-    final int pixelWidth = physicalSize.width.ceil();
-    final int pixelHeight = physicalSize.height.ceil();
+    int pixelWidth = physicalSize.width.ceil();
+    int pixelHeight = physicalSize.height.ceil();
+
+    int canvasWidth;
+    int canvasHeight;
+    if (!_minimumCanvas) {
+      canvasWidth = pixelWidth;
+      canvasHeight= pixelHeight;
+    } else {
+      canvasWidth = (pixelWidth / 2).ceil();
+      canvasHeight = (pixelHeight / 2).ceil();
+    }
     final html.CanvasElement htmlCanvas = html.CanvasElement(
-      width: pixelWidth,
-      height: pixelHeight,
+      width: canvasWidth,
+      height: canvasHeight,
     );
 
     // The logical size of the canvas is not based on the size of the window
@@ -157,6 +168,7 @@ class Surface {
     // point value we can get.
     final double logicalWidth = pixelWidth / ui.window.devicePixelRatio;
     final double logicalHeight = pixelHeight / ui.window.devicePixelRatio;
+    htmlCanvas.setAttribute('data-minimum-canvas', _minimumCanvas.toString());
     htmlCanvas.style
       ..position = 'absolute'
       ..width = '${logicalWidth}px'
@@ -212,8 +224,8 @@ class Surface {
 
       SkSurface? skSurface = canvasKit.MakeOnScreenGLSurface(
         _grContext!,
-        pixelWidth,
-        pixelHeight,
+        canvasWidth,
+        canvasHeight,
         SkColorSpaceSRGB,
       );
 
